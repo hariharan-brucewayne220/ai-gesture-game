@@ -97,7 +97,7 @@ ai-gesture-gaming/
 
 ---
 
-## 🔮 Coming Soon (Day 2+ Features)
+## 🔮 Coming Soon 
 
 - 🎤 Voice command integration via Whisper + LLMs
 - 🎮 Game-specific control profiles (custom mappings)
