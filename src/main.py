@@ -3,11 +3,13 @@ import time
 import threading
 from gesture_detector import GestureDetector
 from input_controller import InputController
+from head_tracker import HeadTracker
 
 class GestureGamingSystem:
     def __init__(self):
         self.detector = GestureDetector()
         self.controller = InputController()
+        self.head_tracker = HeadTracker(enabled=True)  # Set to False to disable
         self.running = False
         self.paused = False
         
@@ -15,12 +17,17 @@ class GestureGamingSystem:
         """Start the gesture gaming system"""
         print("🎮 AI Gesture Gaming System Starting...")
         print("📋 Gesture Controls:")
-        print("   🖐 Open Palm → Forward (W)")
+        print("   🖐 Open Palm → Jump (Space)")
         print("   ✊ Closed Fist → Backward (S)")
-        print("   ✌️ Peace Sign → Strafe Left (A)")
-        print("   🤟 Rock Sign → Strafe Right (D)")
-        print("   👍 Thumbs Up → Jump (Space)")
-        print("   ☝️ Index Point → Attack (Left Click)")
+        print("   ☝️ Index Point Left → Strafe Left (A)")
+        print("   ☝️ Index Point Right → Strafe Right (D)")
+        print("   ☝️ Index Point Up → Forward (W)")
+        print("   🤟 Rock Sign (Index + Pinky) → Attack (Left Click)")
+        print("\n🎯 Head Tracking:")
+        print("   Camera movement via head pose")
+        print("   'r' - Reset head reference")
+        print("   'h' - Toggle head tracking")
+        print("   'f' - Toggle face mesh visibility")
         print("\n🔧 Controls:")
         print("   'p' - Pause/Resume")
         print("   'q' - Quit")
@@ -33,6 +40,10 @@ class GestureGamingSystem:
             while self.running:
                 # Process frame
                 frame, gesture, confidence = self.detector.process_frame()
+                
+                # Process head tracking
+                if frame is not None:
+                    frame, mouse_dx, mouse_dy = self.head_tracker.process_head_movement(frame)
                 
                 if frame is not None:
                     # Add system status to frame
@@ -65,6 +76,14 @@ class GestureGamingSystem:
                         print("▶️ System RESUMED")
                 elif key == 27:  # ESC key
                     self.controller.emergency_stop()
+                elif key == ord('h'):
+                    status = "ENABLED" if self.head_tracker.toggle() else "DISABLED"
+                    print(f"🎯 Head tracking {status}")
+                elif key == ord('r'):
+                    self.head_tracker.reset_reference()
+                elif key == ord('f'):
+                    status = "SHOWN" if self.head_tracker.toggle_face_mesh() else "HIDDEN"
+                    print(f"👤 Face mesh {status}")
                     
         except KeyboardInterrupt:
             print("\n🛑 System interrupted by user")

@@ -4,3 +4,4 @@ numpy==1.24.3
 pynput==1.7.6
 pyautogui==0.9.54
 Pillow==10.0.1
+pydirectinput==1.0.4

@@ -31,6 +31,7 @@ ENV/
 env.bak/
 venv.bak/
 mp_env/
+gesture-env/
 
 # IDE
 .vscode/
