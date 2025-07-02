@@ -3,6 +3,7 @@ from pynput import keyboard, mouse
 from pynput.keyboard import Key, Listener
 import threading
 from typing import Dict, Set
+import pydirectinput
 
 class InputController:
     def __init__(self):
@@ -26,6 +27,14 @@ class InputController:
         # Key press timing
         self.last_action_time = {}
         self.action_cooldown = 0.1  # 100ms cooldown between actions
+        
+        # Camera movement timing
+        self.last_camera_move = time.time()
+        self.camera_cooldown = 0.01  # 10ms between camera moves
+        
+        # Configure pydirectinput for camera movement
+        pydirectinput.FAILSAFE = False
+        pydirectinput.PAUSE = 0
         
     def send_action(self, gesture: str, confidence: float):
         """Send input action based on gesture"""
@@ -93,6 +102,60 @@ class InputController:
             except:
                 pass
         self.pressed_keys.clear()
+    
+    def send_voice_action(self, voice_command: Dict):
+        """Send input action based on voice command"""
+        if not voice_command:
+            return
+        
+        key = voice_command['key']
+        name = voice_command['name']
+        
+        print(f"🎤 Executing voice command: {name} -> {key}")
+        
+        # Handle different key types
+        if key == 'left_click':
+            self.mouse_controller.click(mouse.Button.left, 1)
+        elif key == 'right_click':
+            self.mouse_controller.click(mouse.Button.right, 1)
+        elif key == 'shift':
+            self.press_and_release_key(Key.shift)
+        elif key == 'ctrl':
+            self.press_and_release_key(Key.ctrl)
+        elif key == 'alt':
+            self.press_and_release_key(Key.alt)
+        elif key == 'tab':
+            self.press_and_release_key(Key.tab)
+        elif key == 'esc':
+            self.press_and_release_key(Key.esc)
+        elif key == 'space':
+            self.press_and_release_key(Key.space)
+        elif len(key) == 1:  # Single character keys
+            self.press_and_release_key(key)
+        else:
+            print(f"⚠️ Unknown key mapping: {key}")
+    
+    def press_and_release_key(self, key):
+        """Press and release a key (for single actions)"""
+        try:
+            self.keyboard_controller.press(key)
+            time.sleep(0.05)  # Brief press
+            self.keyboard_controller.release(key)
+        except Exception as e:
+            print(f"⚠️ Error pressing key {key}: {e}")
+    
+    def send_camera_movement(self, mouse_dx: int, mouse_dy: int):
+        """Send camera movement using pydirectinput"""
+        if mouse_dx == 0 and mouse_dy == 0:
+            return
+        
+        current_time = time.time()
+        if current_time - self.last_camera_move > self.camera_cooldown:
+            try:
+                pydirectinput.moveRel(mouse_dx, mouse_dy)
+                self.last_camera_move = current_time
+            except Exception as e:
+                print(f"⚠️ Camera movement error: {e}")
     
     def emergency_stop(self):
         """Emergency stop - release everything"""

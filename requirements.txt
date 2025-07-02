@@ -5,3 +5,7 @@ pynput==1.7.6
 pyautogui==0.9.54
 Pillow==10.0.1
 pydirectinput==1.0.4
+speechrecognition==3.10.0
+pyaudio==0.2.11
+pyttsx3==2.90
+fuzzywuzzy==0.18.0
