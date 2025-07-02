@@ -25,6 +25,14 @@ class GestureDetector:
         self.gesture_confidence = 0.0
         self.gesture_history = []
         
+        # Hand camera control - Velocity-based movement
+        self.hand_camera_enabled = False
+        self.hand_reference_position = None
+        self.last_hand_position = None
+        self.camera_sensitivity_x = 2.0  # Velocity-based sensitivity
+        self.camera_sensitivity_y = 1.5  # Velocity-based sensitivity
+        self.camera_deadzone = 0.01     # Movement threshold
+        
     def get_hand_landmarks(self, frame):
         """Extract hand landmarks from frame"""
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -152,11 +160,70 @@ class GestureDetector:
             
         return "none", 0.0
     
-    def process_frame(self) -> Tuple[Optional[np.ndarray], str, float]:
-        """Process single frame and return frame, gesture, confidence"""
+    def calculate_hand_camera_movement(self, landmarks, image_size):
+        """Calculate camera movement based on hand velocity (movement between frames)"""
+        if not landmarks or not self.hand_camera_enabled:
+            return 0, 0
+            
+        # Use wrist position (landmark 0) as tracking point
+        wrist = landmarks.landmark[0]
+        current_position = (wrist.x, wrist.y)
+        
+        # Initialize positions if not set
+        if self.last_hand_position is None:
+            self.last_hand_position = current_position
+            return 0, 0
+        
+        # Calculate velocity (movement since last frame)
+        velocity_x = current_position[0] - self.last_hand_position[0]
+        velocity_y = current_position[1] - self.last_hand_position[1]
+        
+        # Update last position for next frame
+        self.last_hand_position = current_position
+        
+        # Apply deadzone - only move if velocity is above threshold
+        mouse_dx = 0
+        mouse_dy = 0
+        
+        if abs(velocity_x) > self.camera_deadzone:
+            mouse_dx = int(velocity_x * self.camera_sensitivity_x * 1000)  # Scale for screen pixels
+            
+        if abs(velocity_y) > self.camera_deadzone:
+            mouse_dy = int(velocity_y * self.camera_sensitivity_y * 1000)  # Scale for screen pixels
+        
+        return mouse_dx, mouse_dy
+    
+    def set_hand_camera_reference(self):
+        """Reset hand camera tracking"""
+        self.last_hand_position = None
+        print("📍 Hand camera tracking reset")
+    
+    def toggle_hand_camera(self):
+        """Toggle hand camera control on/off"""
+        self.hand_camera_enabled = not self.hand_camera_enabled
+        if self.hand_camera_enabled:
+            self.last_hand_position = None  # Reset tracking when enabling
+            print(f"✅ Hand camera control ENABLED (Velocity-based)")
+        else:
+            print("❌ Hand camera control DISABLED")
+        return self.hand_camera_enabled
+    
+    def adjust_camera_sensitivity(self, increase: bool = True):
+        """Adjust camera sensitivity up or down"""
+        if increase:
+            self.camera_sensitivity_x = min(2.0, self.camera_sensitivity_x + 0.1)
+            self.camera_sensitivity_y = min(1.6, self.camera_sensitivity_y + 0.08)
+        else:
+            self.camera_sensitivity_x = max(0.1, self.camera_sensitivity_x - 0.1)
+            self.camera_sensitivity_y = max(0.08, self.camera_sensitivity_y - 0.08)
+        
+        print(f"📹 Hand camera sensitivity: {self.camera_sensitivity_x:.1f}x")
+    
+    def process_frame(self) -> Tuple[Optional[np.ndarray], str, float, int, int]:
+        """Process single frame and return frame, gesture, confidence, hand_mouse_dx, hand_mouse_dy"""
         ret, frame = self.cap.read()
         if not ret:
-            return None, "none", 0.0
+            return None, "none", 0.0, 0, 0
             
         # Flip frame horizontally for mirror effect
         frame = cv2.flip(frame, 1)
@@ -164,9 +231,14 @@ class GestureDetector:
         # Get hand landmarks
         landmarks = self.get_hand_landmarks(frame)
         
+        hand_mouse_dx, hand_mouse_dy = 0, 0
+        
         if landmarks:
             # Draw landmarks on frame
             self.mp_draw.draw_landmarks(frame, landmarks, self.mp_hands.HAND_CONNECTIONS)
+            
+            # Calculate hand camera movement
+            hand_mouse_dx, hand_mouse_dy = self.calculate_hand_camera_movement(landmarks, frame.shape)
             
             # Extract features and classify
             features = self.extract_features(landmarks)
@@ -191,16 +263,21 @@ class GestureDetector:
             cv2.putText(frame, f"Gesture: {display_gesture} ({display_confidence:.2f})", 
                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
+            # Add hand camera status
+            if self.hand_camera_enabled:
+                cv2.putText(frame, f"Hand Camera: ({hand_mouse_dx}, {hand_mouse_dy})", 
+                           (10, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 255), 1)
+            
             # Debug info - show finger count and thumb status
             debug_text = f"4-Fingers: {features['extended_fingers']} | Total: {features['total_fingers']} | Thumb: {features['thumb_extended']}"
             cv2.putText(frame, debug_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 1)
                        
-            return frame, self.current_gesture, self.gesture_confidence
+            return frame, self.current_gesture, self.gesture_confidence, hand_mouse_dx, hand_mouse_dy
         else:
             # No hand detected
             cv2.putText(frame, "No hand detected", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            return frame, "none", 0.0
+            return frame, "none", 0.0, 0, 0
     
     def release(self):
         """Clean up resources"""
