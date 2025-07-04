@@ -48,4 +48,29 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Claude workspace
+.claude/
+
+# Backups and model files
+backups/
+*.pkl
+trained_gestures.json
+
+# Test files
+test_*.py
+*_test.py
+minimal_test.py
+ultra_minimal_test.py
+
+# Images and media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.ico
+
+# Generated data
+save_model.py 

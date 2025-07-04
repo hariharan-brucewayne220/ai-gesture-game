@@ -2,11 +2,12 @@ import speech_recognition as sr
 import pyttsx3
 import threading
 import time
+import json
 from typing import Dict, List, Optional, Tuple
 from fuzzywuzzy import fuzz
 
 class VoiceController:
-    def __init__(self):
+    def __init__(self, groq_api_key=None):
         # Speech recognition setup
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
@@ -29,6 +30,10 @@ class VoiceController:
         # Fuzzy matching threshold
         self.match_threshold = 70  # 70% similarity required
         
+        # AI Integration
+        self.groq_api_key = groq_api_key
+        self.ai_mode = False  # Default to traditional mode
+        
         # Background listening thread
         self.listen_thread = None
         
@@ -37,7 +42,7 @@ class VoiceController:
             'sprint': {
                 'name': 'Sprint',
                 'key': 'shift',
-                'intents': ['sprint', 'run', 'fast', 'hurry', 'speed']
+                'intents': ['sprwdnt', 'run', 'fast', 'hurry', 'speed']
             },
             'crouch': {
                 'name': 'Crouch',
@@ -153,6 +158,16 @@ class VoiceController:
                 'name': 'Bomb',
                 'key': '5',
                 'intents': ['bomb', 'explosive', 'grenade', 'boom']
+            },
+            'flame_on': {
+                'name': 'Hand Camera On',
+                'key': 'hand_camera_on',
+                'intents': ['flame on', 'hand track on', 'camera on', 'tracking on']
+            },
+            'flame_off': {
+                'name': 'Hand Camera Off', 
+                'key': 'hand_camera_off',
+                'intents': ['flame off', 'hand track off', 'camera off', 'tracking off']
             }
         }
         
@@ -196,15 +211,30 @@ class VoiceController:
     def execute_voice_command(self, spoken_text: str):
         """Execute voice command if recognized"""
         print(f"🔍 Trying to match: '{spoken_text}'")
-        match_result = self.find_best_intent_match(spoken_text)
-        if not match_result:
-            print(f"❌ No match found for: '{spoken_text}'")
-            return None
         
-        action_id, matched_intent, confidence = match_result
+        action_id = None
+        confidence = 0
+        matched_intent = ""
+        
+        # Try AI parsing first if enabled
+        if self.ai_mode and self.groq_api_key:
+            action_id = self.ai_parse_command(spoken_text)
+            if action_id:
+                confidence = 95  # High confidence for AI matches
+                matched_intent = "AI-parsed"
+        
+        # Fallback to traditional fuzzy matching
+        if not action_id:
+            match_result = self.find_best_intent_match(spoken_text)
+            if not match_result:
+                print(f"❌ No match found for: '{spoken_text}'")
+                return None
+            action_id, matched_intent, confidence = match_result
+        
         action_config = self.action_mappings[action_id]
         
-        print(f"✅ Voice Command: '{spoken_text}' → '{matched_intent}' → {action_config['name']} ({confidence}%)")
+        mode_indicator = "🤖" if self.ai_mode and confidence == 95 else "🔍"
+        print(f"✅ {mode_indicator} Voice Command: '{spoken_text}' → '{matched_intent}' → {action_config['name']} ({confidence}%)")
         
         # Audio feedback
         if self.audio_feedback:
@@ -309,6 +339,76 @@ class VoiceController:
             intents_str = ", ".join(f"'{intent}'" for intent in config['intents'])
             print(f"📋 {config['name']} ({config['key']}): {intents_str}")
         print("=" * 50)
+    
+    def toggle_ai_mode(self):
+        """Toggle between AI and traditional voice parsing"""
+        if not self.groq_api_key:
+            print("❌ AI mode unavailable - no API key provided")
+            return False
+            
+        self.ai_mode = not self.ai_mode
+        mode = "AI-POWERED" if self.ai_mode else "TRADITIONAL"
+        print(f"🤖 Voice parsing mode: {mode}")
+        return self.ai_mode
+    
+    def ai_parse_command(self, spoken_text: str) -> Optional[str]:
+        """Parse voice command using Groq AI"""
+        if not self.groq_api_key:
+            return None
+            
+        try:
+            import requests
+            
+            # Create game context from available commands
+            available_actions = []
+            for action_id, config in self.action_mappings.items():
+                available_actions.append(f"{action_id}: {config['name']} - {', '.join(config['intents'])}")
+            
+            game_context = "\n".join(available_actions)
+            
+            prompt = f"""You are a gaming voice command parser. 
+            
+Available game actions:
+{game_context}
+
+User said: "{spoken_text}"
+
+Parse this into ONE action ID from the list above. Consider context like:
+- "roll roll roll" likely means dodge/crouch for defensive action
+- "go go go" likely means sprint/run
+- "get down" means crouch
+- "move fast" means sprint
+
+Return ONLY the action ID (like 'sprint', 'crouch', etc.) or 'none' if no match."""
+
+            headers = {
+                "Authorization": f"Bearer {self.groq_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "messages": [{"role": "user", "content": prompt}],
+                "model": "llama-3.1-8b-instant",
+                "temperature": 0.1,
+                "max_tokens": 50
+            }
+            
+            response = requests.post("https://api.groq.com/openai/v1/chat/completions", 
+                                   headers=headers, json=data, timeout=3)
+            
+            if response.status_code == 200:
+                result = response.json()
+                action_id = result['choices'][0]['message']['content'].strip().lower()
+                
+                if action_id in self.action_mappings:
+                    print(f"🤖 AI parsed '{spoken_text}' → {action_id}")
+                    return action_id
+                    
+            return None
+            
+        except Exception as e:
+            print(f"❌ AI parsing failed: {e}")
+            return None
     
     def cleanup(self):
         """Clean up resources"""
