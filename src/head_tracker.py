@@ -8,38 +8,44 @@ from typing import Optional, Tuple
 class HeadTracker:
     def __init__(self, enabled=True):
         self.enabled = enabled
-        if not self.enabled:
-            return
-            
-        # Initialize MediaPipe Face Mesh
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.face_mesh = self.mp_face_mesh.FaceMesh(
-            static_image_mode=False,
-            max_num_faces=1,
-            refine_landmarks=True,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
-        )
-        self.mp_drawing = mp.solutions.drawing_utils
+        
+        # Always initialize these attributes
+        self.mp_face_mesh = None
+        self.face_mesh = None
+        self.mp_drawing = None
+        self.reference_pose = None
+        self.last_mouse_move = time.time()
+        self.mouse_cooldown = 0.01  # 10ms between mouse moves
+        self.sensitivity_x = 8.0  # Horizontal sensitivity
+        self.sensitivity_y = 6.0  # Vertical sensitivity
+        self.deadzone = 5.0  # Degrees of deadzone
+        self.show_face_mesh = False  # Set to True to show face landmarks
         
         # Configure pydirectinput for game compatibility
         pydirectinput.FAILSAFE = False  # Disable failsafe for games
         pydirectinput.PAUSE = 0  # Remove default pause between actions
         
-        # Head tracking state
-        self.reference_pose = None
-        self.last_mouse_move = time.time()
-        self.mouse_cooldown = 0.01  # 10ms between mouse moves
-        
-        # Sensitivity settings
-        self.sensitivity_x = 8.0  # Horizontal sensitivity
-        self.sensitivity_y = 6.0  # Vertical sensitivity
-        self.deadzone = 5.0  # Degrees of deadzone
-        
-        # Visual settings
-        self.show_face_mesh = False  # Set to True to show face landmarks
-        
-        print("🎯 Head Tracker initialized - ready for camera control!")
+        if self.enabled:
+            self._initialize_mediapipe()
+    
+    def _initialize_mediapipe(self):
+        """Initialize MediaPipe Face Mesh components"""
+        try:
+            self.mp_face_mesh = mp.solutions.face_mesh
+            # Try simplified configuration first
+            self.face_mesh = self.mp_face_mesh.FaceMesh(
+                static_image_mode=False,
+                max_num_faces=1,
+                refine_landmarks=False,  # Disable refinement to avoid compatibility issues
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5
+            )
+            self.mp_drawing = mp.solutions.drawing_utils
+            print("🎯 Head Tracker initialized - ready for camera control!")
+        except Exception as e:
+            print(f"⚠️ Head Tracker initialization failed: {e}")
+            print("💡 Head tracking disabled - gesture and voice controls still work!")
+            self.enabled = False
     
     def calculate_head_pose(self, landmarks, image_size):
         """Calculate head pose angles from face landmarks"""
@@ -102,7 +108,7 @@ class HeadTracker:
     
     def process_head_movement(self, frame):
         """Process frame and return mouse movement if head tracking enabled"""
-        if not self.enabled:
+        if not self.enabled or self.face_mesh is None:
             return frame, 0, 0
             
         # Convert BGR to RGB
@@ -174,8 +180,15 @@ class HeadTracker:
         """Toggle head tracking on/off"""
         self.enabled = not self.enabled
         if self.enabled:
+            # Initialize MediaPipe if not already done
+            if self.face_mesh is None:
+                self._initialize_mediapipe()
             self.reference_pose = None  # Reset reference when re-enabling
-            print("✅ Head tracking ENABLED")
+            if self.face_mesh is not None:
+                print("✅ Head tracking ENABLED")
+            else:
+                print("❌ Head tracking failed to initialize")
+                self.enabled = False
         else:
             print("❌ Head tracking DISABLED")
         return self.enabled
