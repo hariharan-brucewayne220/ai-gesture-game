@@ -315,3 +315,35 @@ The following folders are not tracked by git and are excluded via .gitignore due
 - whisper.cpp/
 
 If you need these models, please download them separately as per the project instructions.
+
+## Virtual Environment Setup
+
+This project requires **two separate virtual environments**:
+
+### 1. Main Environment (for running main.py)
+```bash
+# Create and activate the main environment
+python -m venv gesture-env
+gesture-env\Scripts\activate  # Windows
+# or
+source gesture-env/bin/activate  # Linux/Mac
+
+# Install main dependencies
+pip install -r requirements.txt
+```
+
+### 2. RAG Environment (for running query_rag.py)
+```bash
+# Create and activate the RAG environment
+python -m venv rag_env
+rag_env\Scripts\activate  # Windows
+# or
+source rag_env/bin/activate  # Linux/Mac
+
+# Install RAG dependencies
+pip install -r game_rag/requirements.txt
+```
+
+**Important**: Each environment has different dependencies and should be used separately:
+- Use `gesture-env` for running `main.py` and gesture/voice control features
+- Use `rag_env` for running `query_rag.py` and RAG (Retrieval-Augmented Generation) features
