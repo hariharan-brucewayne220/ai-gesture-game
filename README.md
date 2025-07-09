@@ -25,7 +25,12 @@ Transform your webcam into an AI-powered game controller! Control any PC game us
 
 ## Complete Control System
 
-### Gesture Controls
+### Dual Hand System
+**Important**: This system uses **both hands** for optimal gaming control:
+- **Right Hand**: All gesture controls (WASD, jump, attack)
+- **Left Hand**: Camera movement (smooth aiming)
+
+### Gesture Controls (RIGHT HAND)
 | Gesture | Action | Game Input |
 |--------|--------|------------|
 | Open Palm | Jump | Space |
@@ -33,11 +38,21 @@ Transform your webcam into an AI-powered game controller! Control any PC game us
 | Index Point Up | Move Forward | W |
 | Index Point Left | Strafe Left | A |
 | Index Point Right | Strafe Right | D |
-| Rock Sign | Attack | Left Click |
+| Rock Sign (Index + Pinky) | Attack | Left Click |
 
-You can also train your custom gestures too by pressing j key once your main.py starts running.
+### Camera Controls (LEFT HAND)
+- **Left hand movement** → Smooth camera control
+- **Wink detection** → Hold Right Mouse Button (aim mode)
+- **Say "flame on/off"** → Toggle hand camera control
 
-NOTE : every key press operation needs to be done by clicking on the camera feed window only then the custom key events such as adding gestures,voice would work
+### Custom Gesture Training
+You can train custom gestures for any key/action:
+- **Press 'j'** → Add new custom gesture
+- **Press 'k'** → Full calibration (all gestures)
+- **Press 'l'** → List trained gestures
+- **Press 'z'** → Clear all and start fresh
+
+**Note**: All key presses must be done while the **camera window is focused** for controls to work.
 
 ### Voice Commands
 - "fire" → Left Click (attack)
@@ -46,11 +61,56 @@ NOTE : every key press operation needs to be done by clicking on the camera feed
 - "inventory" → Tab key
 - Custom game profiles with 50+ commands per game
 
+### Voice System Controls
+- **Press 'v'** → Toggle voice recognition on/off
+- **Press 'n'** → Add new voice command
+- **Press 'm'** → Remove voice command
+- **Press 'b'** → List all voice commands
+- **Press 't'** → Switch voice engine (Google ↔ Deepgram)
+- **Press 'g'** → Toggle voice debug mode
+- **Press 'h'** → Toggle gaming mode optimization
+
 ### AI Game Assistant
 - "How do I defeat Sigrun?" → Detailed boss strategies
 - "What's the best armor?" → Equipment recommendations
 - "Combat tips" → Advanced gameplay strategies
 - Support for any game with PDF guide upload
+
+## Hotkeys & Controls Reference
+
+### Camera & Sensitivity Controls
+- **'+'** → Increase hand camera sensitivity
+- **'-'** → Decrease hand camera sensitivity
+- **','** → Decrease aim smoothing (more responsive)
+- **'.'** → Increase aim smoothing (less jittery)
+- **'/'** → Toggle left hand performance debug
+- **';'** → Toggle camera movement debug
+- **'\''** → Toggle dual hand mode on/off
+
+### Attack & Combat Controls
+- **'['** → Decrease attack hold duration (faster games)
+- **']'** → Increase attack hold duration (precise shooting)
+- **'w'** → Toggle wink detection debug mode
+
+### Performance & Debug Controls
+- **'`'** → Toggle adaptive FPS mode
+- **'\'** → Show performance statistics
+- **'o'** → Toggle gesture-based camera control
+
+### Audio & Voice Controls
+- **'v'** → Toggle voice recognition
+- **'c'** → Recalibrate microphone
+- **'x'** → Toggle noise suppression
+- **'i'** → Toggle game audio filtering
+- **'F6'** → Toggle real-time voice mode
+
+### System Controls
+- **'p'** → Pause/Resume system
+- **'q'** → Quit application
+- **'r'** → Emergency release all keys
+- **'ESC'** → Emergency stop
+
+**Important**: Focus the camera window before using any hotkeys!
 
 ## Quick Start
 
