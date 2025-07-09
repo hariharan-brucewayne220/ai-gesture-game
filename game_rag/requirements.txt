@@ -1,0 +1,27 @@
+# RAG System Requirements
+# Core vector database
+chromadb>=0.4.0
+
+# LangChain for RAG pipeline
+langchain>=0.1.0
+langchain-openai>=0.1.0
+
+# OpenAI API
+openai>=1.0.0
+
+# PDF processing
+PyPDF2>=3.0.0
+
+# Web scraping (optional)
+requests>=2.28.0
+beautifulsoup4>=4.11.0
+
+# Text processing
+tiktoken>=0.5.0
+
+# Optional: Local embeddings (if not using OpenAI)
+sentence-transformers>=2.2.0
+
+# Optional: Alternative LLMs
+# ollama>=0.1.0
+# huggingface_hub>=0.16.0

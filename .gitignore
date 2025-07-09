@@ -1,4 +1,135 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+gesture-env/
+mp_env/
+rag_env/
+venv/
+env/
+ENV/
+
+# Large Model Files
 vosk_models/
 whisper.cpp/
-rag_env/
-mediapipe/ 
+mediapipe/
+
+# Backup Files
+backups/
+mlp_models/
+*.pkl
+*.pth
+*.pt
+*.bin
+*.onnx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+chroma_db/
+
+# Cache
+.cache/
+*.cache
+
+# Large Files (specific)
+*.dll
+*.dylib
+*.so.*
+
+# Empty keystroke files
+1
+a
+d
+e
+esc
+f
+i
+j
+k
+left
+m
+middle
+mouse
+p
+q
+r
+right
+s
+space
+t
+w
+x
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Package Lock Files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Coverage Reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Large PDF files
+*.pdf
+guides/*.pdf 
