@@ -161,11 +161,50 @@ ai-gesture-gaming/
 Create custom game profiles in `custom_controller/`:
 ```json
 {
-  "game_name": "Your Game",
-  "voice_commands": {
-    "attack": ["fire", "shoot", "attack"],
-    "defend": ["block", "shield", "defend"],
-    "special": ["ultimate", "special", "ability"]
+  "movement": {
+    "move_forward": "w",
+    "move_left": "a",
+    "move_backward": "s",
+    "move_right": "d",
+    "sprint": "Key.shift_l",
+    "toggle_walk": "Key.ctrl_l"
+  },
+  "combat": {
+    "light_attack": "Key.mouse.left",
+    "heavy_attack": "Key.mouse.right",
+    "parry": "q",
+    "dodge_evade": "Key.space",
+    "skill_1": "e",
+    "skill_2": "r",
+    "skill_3": "f",
+    "qte_action_attack": "Key.mouse.left",
+    "qte_action_jump_counter": "Key.ctrl_l",
+    "gradient_attack": "q"
+  },
+  "exploration_and_interaction": {
+    "interact": "e",
+    "jump": "Key.space",
+    "strike": "f",
+    "toggle_character": "t",
+    "recenter_camera": "c",
+    "go_to_camp": "g"
+  },
+  "menu_and_interface": {
+    "open_expedition_menu": "tab",
+    "open_expedition_status": "q",
+    "heal_party": "q",
+    "open_map": "m",
+    "inventory": "i",
+    "skills_menu": "k",
+    "goals_quests": "j",
+    "pause_menu": "Key.esc",
+    "back": "Key.esc",
+    "skip_turn_battle": "tab",
+    "flee_battle": "c"
+  },
+  "mouse_actions": {
+    "toggle_free_aim": "Key.mouse.right",
+    "shoot": "Key.mouse.left"
   }
 }
 ```
