@@ -40,6 +40,9 @@ mp_env/
 # PDF files
 *.pdf
 
+# Guides folder
+guides/
+
 # Backup Files
 backups/
 mlp_models/
