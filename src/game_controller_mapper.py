@@ -90,26 +90,28 @@ class GameControllerMapper:
         existing_custom = self.get_existing_custom_gestures(mlp_trainer) if mlp_trainer else {}
         available_slots = max(0, 8 - current_gesture_count)
         
+        # Get game name for dynamic prompting
+        game_name = getattr(self, 'current_game_name', 'Unknown Game')
+        
         prompt = f"""
-🚨 CREATE NATURAL GOD OF WAR VOICE COMMANDS - NO TECHNICAL NAMES! 🚨
+🚨 CREATE NATURAL {game_name.upper()} VOICE COMMANDS - NO TECHNICAL NAMES! 🚨
 
-AVAILABLE GOD OF WAR CONTROLS:
+AVAILABLE {game_name.upper()} CONTROLS:
 {json.dumps(all_actions, indent=2)}
 
 CRITICAL REQUIREMENTS:
 1. Create 10-15 voice commands (NOT just 4!)
-2. Use NATURAL gaming words gamers actually yell: "block", "axe", "boy", "rage"
-3. NO technical names like "block_parry" or "son_action" 
+2. Use NATURAL gaming words gamers actually yell for {game_name}
+3. NO technical names - use simple, intuitive words
 4. Multiple phrases per command for better recognition
 5. 1-2 words maximum per phrase
 
-🎮 MANDATORY EXAMPLES TO FOLLOW:
-- For "block_parry" → Use command name "block" with phrases ["block", "shield", "defend", "guard"]
-- For "axe_recall" → Use command name "axe" with phrases ["axe", "throw", "recall", "back"]  
-- For "son_action" → Use command name "boy" with phrases ["boy", "son", "atreus", "help"]
-- For "spartan_rage" → Use command name "rage" with phrases ["rage", "fury", "power", "berserker"]
-- For "weapons" → Use command name "weapons" with phrases ["weapons", "gear", "sword", "equipment"]
-- For "map" → Use command name "map" with phrases ["map", "world", "location", "where"]
+🎮 GAME-SPECIFIC EXAMPLES:
+- For combat actions → Use words like "attack", "block", "dodge", "heavy"
+- For movement → Use words like "run", "jump", "crouch", "climb"
+- For items/tools → Use words like "throw", "grab", "use", "switch"
+- For UI actions → Use words like "map", "menu", "inventory", "pause"
+- For special abilities → Use words like "rage", "power", "skill", "ability"
 
 OUTPUT FORMAT - COPY THIS STRUCTURE EXACTLY:
 {{
@@ -123,20 +125,20 @@ OUTPUT FORMAT - COPY THIS STRUCTURE EXACTLY:
       "phrases": ["block", "shield", "defend", "guard", "parry", "protect"],
       "description": "Block and parry attacks"
     }},
-    "axe": {{
+    "use": {{
       "key": "R", 
-      "phrases": ["axe", "throw", "recall", "back", "return", "weapon"],
-      "description": "Recall thrown axe"
+      "phrases": ["use", "activate", "trigger", "execute", "perform", "action"],
+      "description": "Use item/ability"
     }},
-    "boy": {{
+    "help": {{
       "key": "F",
-      "phrases": ["boy", "son", "atreus", "help", "assist", "support"],
-      "description": "Command Atreus"
+      "phrases": ["help", "assist", "companion", "partner", "support", "ally"],
+      "description": "Command companion"
     }},
-    "rage": {{
+    "power": {{
       "key": "Q + Middle Mouse Button",
-      "phrases": ["rage", "fury", "power", "berserker", "mode", "unleash"],
-      "description": "Activate Spartan Rage"
+      "phrases": ["power", "special", "ability", "skill", "ultimate", "rage"],
+      "description": "Activate special ability"
     }},
     "dodge": {{
       "key": "Space",
@@ -171,8 +173,8 @@ OUTPUT FORMAT - COPY THIS STRUCTURE EXACTLY:
   }}
 }}
 
-🚨 CRITICAL: Use command names like "block", "axe", "boy" - NOT "block_parry", "axe_recall", "son_action"!
-Generate 10+ voice commands with natural gaming language that players actually use in combat!
+🚨 CRITICAL: Use simple, natural command names that match how players talk about {game_name}!
+Generate 10+ voice commands with natural gaming language specific to {game_name}!
 """
         
         try:
@@ -241,25 +243,25 @@ Generate 10+ voice commands with natural gaming language that players actually u
     
     def apply_mappings(self, mappings: Dict, mlp_trainer, input_controller, voice_controller=None):
         """Apply the LLM-recommended mappings to the system"""
-        print("\n🎮 Applying God of War control mappings...")
+        game_name = getattr(self, 'current_game_name', 'Unknown Game')
+        print(f"\n🎮 Applying {game_name} control mappings...")
         print("IMPORTANT: Preserving all trained gesture data - only remapping keys")
         
-        # Set game-specific camera mode first (God of War uses arrow keys)
+        # Set game-specific camera mode
         if hasattr(input_controller, 'set_game_mode'):
-            game_name = getattr(self, 'current_game_name', 'god of war')
             input_controller.set_game_mode(game_name)
         
         # CLEAR ONLY VOICE COMMANDS (preserves gesture training data)
         if voice_controller and "voice_commands" in mappings:
-            # Convert God of War formatted voice commands
+            # Convert game-specific voice commands
             converted_commands = self._convert_voice_commands(mappings["voice_commands"])
             voice_controller.clear_and_add_game_commands(converted_commands)
         
         # Update gesture-to-key mappings (reuse trained hand shapes, change key outputs)
         if "gesture_mappings" in mappings:
-            print("\n📋 Gesture Key Remappings for God of War:")
+            print(f"\n📋 Gesture Key Remappings for {game_name}:")
             for action, key_value in mappings["gesture_mappings"].items():
-                # Convert God of War key format to simple key for MLP trainer
+                # Convert game key format to simple key for MLP trainer
                 simple_key = self._convert_key_to_simple_format(key_value)
                 
                 # Find which gesture class corresponds to this action
@@ -274,14 +276,14 @@ Generate 10+ voice commands with natural gaming language that players actually u
         # Show analysis
         if "analysis" in mappings:
             analysis = mappings["analysis"]
-            print(f"\n🧠 God of War Strategy: {analysis.get('strategy', 'N/A')}")
+            print(f"\n🧠 {game_name} Strategy: {analysis.get('strategy', 'N/A')}")
             print(f"📝 Gesture Logic: {analysis.get('gesture_rationale', 'N/A')}")
         
-        print("\n✅ God of War mappings applied - gesture training preserved")
+        print(f"\n✅ {game_name} mappings applied - gesture training preserved")
         return True
     
     def _convert_key_to_simple_format(self, key_value: str) -> str:
-        """Convert God of War key format to simple format for MLP trainer"""
+        """Convert game key format to simple format for MLP trainer"""
         # Handle common conversions
         conversions = {
             "Left Click": "click",
@@ -307,12 +309,12 @@ Generate 10+ voice commands with natural gaming language that players actually u
         return key_value.lower()
     
     def _convert_voice_commands(self, voice_commands: Dict) -> Dict:
-        """Convert God of War voice commands to system format"""
+        """Convert game voice commands to system format"""
         converted = {}
         
         for action_name, command_data in voice_commands.items():
             converted[action_name] = {
-                "key": command_data["key"],  # Use exact key from God of War JSON
+                "key": command_data["key"],  # Use exact key from game JSON
                 "name": command_data.get("description", action_name),
                 "intents": command_data.get("phrases", [action_name])
             }

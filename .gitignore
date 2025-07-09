@@ -32,6 +32,7 @@ env.bak/
 venv.bak/
 mp_env/
 gesture-env/
+rag_env/
 
 # IDE
 .vscode/
@@ -74,3 +75,6 @@ ultra_minimal_test.py
 
 # Generated data
 save_model.py 
+
+vosk_models/
+whisper.cpp/ 

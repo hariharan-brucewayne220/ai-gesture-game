@@ -1,117 +1,313 @@
 {
-  "block": {
-    "name": "block action",
-    "key": "Q",
+  "move_forward": {
+    "name": "move_forward action",
+    "key": "w",
     "intents": [
-      "block"
+      "move_forward"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "axe": {
-    "name": "axe action",
-    "key": "R",
+  "move_left": {
+    "name": "move_left action",
+    "key": "a",
     "intents": [
-      "axe"
+      "move_left"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "boy": {
-    "name": "boy action",
-    "key": "F",
+  "move_backward": {
+    "name": "move_backward action",
+    "key": "s",
     "intents": [
-      "boy"
+      "move_backward"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "rage": {
-    "name": "rage action",
-    "key": "Q + Middle Mouse Button",
+  "move_right": {
+    "name": "move_right action",
+    "key": "d",
     "intents": [
-      "rage"
-    ],
-    "is_combo": true,
-    "priority": "high"
-  },
-  "dodge": {
-    "name": "dodge action",
-    "key": "Space",
-    "intents": [
-      "dodge"
+      "move_right"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "grab": {
-    "name": "grab action",
-    "key": "Middle Mouse Button",
+  "sprint": {
+    "name": "sprint action",
+    "key": "key.shift_l",
     "intents": [
-      "grab"
+      "sprint"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "heavy": {
-    "name": "heavy action",
-    "key": "Right Click",
+  "toggle_walk": {
+    "name": "toggle_walk action",
+    "key": "key.ctrl_l",
     "intents": [
-      "heavy"
+      "toggle_walk"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "aim": {
-    "name": "aim action",
-    "key": "Left CTRL",
+  "light_attack": {
+    "name": "light_attack action",
+    "key": "key.mouse.left",
     "intents": [
-      "aim"
+      "light_attack"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "throw": {
-    "name": "throw action",
-    "key": "Left Mouse Button",
+  "heavy_attack": {
+    "name": "heavy_attack action",
+    "key": "key.mouse.right",
     "intents": [
-      "throw"
+      "heavy_attack"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "run": {
-    "name": "run action",
-    "key": "Shift",
+  "parry": {
+    "name": "parry action",
+    "key": "q",
     "intents": [
-      "run"
+      "parry"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "look": {
-    "name": "look action",
-    "key": "Middle Mouse Button",
+  "dodge_evade": {
+    "name": "dodge_evade action",
+    "key": "key.space",
     "intents": [
-      "look"
+      "dodge_evade"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "map": {
-    "name": "map action",
-    "key": "M",
+  "skill_1": {
+    "name": "skill_1 action",
+    "key": "e",
     "intents": [
-      "map"
+      "skill_1"
     ],
     "is_combo": false,
     "priority": "normal"
   },
-  "weapons": {
-    "name": "weapons action",
-    "key": "I",
+  "skill_2": {
+    "name": "skill_2 action",
+    "key": "r",
     "intents": [
-      "weapons"
+      "skill_2"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "skill_3": {
+    "name": "skill_3 action",
+    "key": "f",
+    "intents": [
+      "skill_3"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "qte_action_attack": {
+    "name": "qte_action_attack action",
+    "key": "key.mouse.left",
+    "intents": [
+      "qte_action_attack"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "qte_action_jump_counter": {
+    "name": "qte_action_jump_counter action",
+    "key": "key.ctrl_l",
+    "intents": [
+      "qte_action_jump_counter"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "gradient_attack": {
+    "name": "gradient_attack action",
+    "key": "q",
+    "intents": [
+      "gradient_attack"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "interact": {
+    "name": "interact action",
+    "key": "e",
+    "intents": [
+      "interact"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "jump": {
+    "name": "jump action",
+    "key": "key.space",
+    "intents": [
+      "jump"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "strike": {
+    "name": "strike action",
+    "key": "f",
+    "intents": [
+      "strike"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "toggle_character": {
+    "name": "toggle_character action",
+    "key": "t",
+    "intents": [
+      "toggle_character"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "recenter_camera": {
+    "name": "recenter_camera action",
+    "key": "c",
+    "intents": [
+      "recenter_camera"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "go_to_camp": {
+    "name": "go_to_camp action",
+    "key": "g",
+    "intents": [
+      "go_to_camp"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "open_expedition_menu": {
+    "name": "open_expedition_menu action",
+    "key": "tab",
+    "intents": [
+      "open_expedition_menu"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "open_expedition_status": {
+    "name": "open_expedition_status action",
+    "key": "q",
+    "intents": [
+      "open_expedition_status"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "heal_party": {
+    "name": "heal_party action",
+    "key": "q",
+    "intents": [
+      "heal_party"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "open_map": {
+    "name": "open_map action",
+    "key": "m",
+    "intents": [
+      "open_map"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "inventory": {
+    "name": "inventory action",
+    "key": "i",
+    "intents": [
+      "inventory"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "skills_menu": {
+    "name": "skills_menu action",
+    "key": "k",
+    "intents": [
+      "skills_menu"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "goals_quests": {
+    "name": "goals_quests action",
+    "key": "j",
+    "intents": [
+      "goals_quests"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "pause_menu": {
+    "name": "pause_menu action",
+    "key": "key.esc",
+    "intents": [
+      "pause_menu"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "back": {
+    "key": "esc",
+    "name": "Back",
+    "intents": [
+      "back"
+    ]
+  },
+  "skip_turn_battle": {
+    "name": "skip_turn_battle action",
+    "key": "tab",
+    "intents": [
+      "skip_turn_battle"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "flee_battle": {
+    "name": "flee_battle action",
+    "key": "c",
+    "intents": [
+      "flee_battle"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "toggle_free_aim": {
+    "name": "toggle_free_aim action",
+    "key": "key.mouse.right",
+    "intents": [
+      "toggle_free_aim"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "shoot": {
+    "name": "shoot action",
+    "key": "key.mouse.left",
+    "intents": [
+      "shoot"
     ],
     "is_combo": false,
     "priority": "normal"
@@ -121,6 +317,20 @@
     "name": "Open",
     "intents": [
       "open"
+    ]
+  },
+  "bash": {
+    "key": "f",
+    "name": "Bash",
+    "intents": [
+      "bash"
+    ]
+  },
+  "hand": {
+    "key": "q",
+    "name": "Hand",
+    "intents": [
+      "hand"
     ]
   }
 }
