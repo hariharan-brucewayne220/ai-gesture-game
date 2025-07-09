@@ -35,6 +35,10 @@ Transform your webcam into an AI-powered game controller! Control any PC game us
 | Index Point Right | Strafe Right | D |
 | Rock Sign | Attack | Left Click |
 
+You can also train your custom gestures too by pressing j key once your main.py starts running.
+
+NOTE : every key press operation needs to be done by clicking on the camera feed window only then the custom key events such as adding gestures,voice would work
+
 ### Voice Commands
 - "fire" → Left Click (attack)
 - "jump" → Space (jump)
