@@ -41,10 +41,10 @@ class HeadTracker:
                 min_tracking_confidence=0.5
             )
             self.mp_drawing = mp.solutions.drawing_utils
-            print("🎯 Head Tracker initialized - ready for camera control!")
+            print("Head Tracker initialized - ready for camera control!")
         except Exception as e:
-            print(f"⚠️ Head Tracker initialization failed: {e}")
-            print("💡 Head tracking disabled - gesture and voice controls still work!")
+            print(f"Warning: Head Tracker initialization failed: {e}")
+            print("Head tracking disabled - gesture and voice controls still work!")
             self.enabled = False
     
     def calculate_head_pose(self, landmarks, image_size):
@@ -104,7 +104,7 @@ class HeadTracker:
     def set_reference_pose(self, pitch, yaw, roll):
         """Set current pose as reference/center position"""
         self.reference_pose = (pitch, yaw, roll)
-        print(f"📍 Head tracking reference set: P:{pitch:.1f}° Y:{yaw:.1f}° R:{roll:.1f}°")
+        print(f"Head tracking reference set: P:{pitch:.1f}° Y:{yaw:.1f}° R:{roll:.1f}°")
     
     def process_head_movement(self, frame):
         """Process frame and return mouse movement if head tracking enabled"""
@@ -147,7 +147,7 @@ class HeadTracker:
                             pydirectinput.moveRel(mouse_dx, mouse_dy)
                             self.last_mouse_move = current_time
                         except Exception as e:
-                            print(f"⚠️ Mouse move error: {e}")
+                            print(f"Warning: Mouse move error: {e}")
                     
                     # Draw face landmarks if enabled
                     if self.show_face_mesh:
@@ -174,7 +174,7 @@ class HeadTracker:
     def reset_reference(self):
         """Reset reference pose - call this to recalibrate"""
         self.reference_pose = None
-        print("🔄 Head tracking reference reset - move your head to set new center")
+        print("Head tracking reference reset - move your head to set new center")
     
     def toggle(self):
         """Toggle head tracking on/off"""
@@ -185,17 +185,17 @@ class HeadTracker:
                 self._initialize_mediapipe()
             self.reference_pose = None  # Reset reference when re-enabling
             if self.face_mesh is not None:
-                print("✅ Head tracking ENABLED")
+                print("Head tracking ENABLED")
             else:
-                print("❌ Head tracking failed to initialize")
+                print("Head tracking failed to initialize")
                 self.enabled = False
         else:
-            print("❌ Head tracking DISABLED")
+            print("Head tracking DISABLED")
         return self.enabled
     
     def toggle_face_mesh(self):
         """Toggle face mesh visualization on/off"""
         self.show_face_mesh = not self.show_face_mesh
         status = "SHOWN" if self.show_face_mesh else "HIDDEN"
-        print(f"👤 Face mesh {status}")
+        print(f"Face mesh {status}")
         return self.show_face_mesh

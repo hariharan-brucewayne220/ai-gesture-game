@@ -1,0 +1,55 @@
+{
+  "movement": {
+    "move_forward": "w",
+    "move_left": "a",
+    "move_backward": "s",
+    "move_right": "d",
+    "sprint": "Key.shift_l",
+    "crouch": "c",
+    "prone": "c (hold)",
+    "dodge": "Key.alt_l"
+  },
+  "combat": {
+    "aim": "Key.mouse.right",
+    "fire_attack": "Key.mouse.left",
+    "melee_attack": "e",
+    "reload_quick_throw_use": "r",
+    "listen_mode": "q",
+    "scope_zoom": "Key.ctrl_l (while aiming with scope)"
+  },
+  "interaction_abilities": {
+    "interact_pick_up": "e",
+    "craft": "Key.space (hold)",
+    "flashlight": "t",
+    "holster_weapon": "z",
+    "swing_on_rope_forward": "w (while on rope)",
+    "swing_on_rope_backward": "s (while on rope)",
+    "jump_from_rope": "Key.space (while on rope)",
+    "ascend_swim": "Key.space (while swimming)",
+    "descend_swim": "c (while swimming)"
+  },
+  "weapon_item_selection": {
+    "open_weapon_wheel": "Key.scroll_lock (press) / q (hold)",
+    "cycle_weapons_scroll": "Key.scroll_down / Key.scroll_up",
+    "weapon_slot_1_long_gun": "1",
+    "weapon_slot_2_long_gun": "2",
+    "weapon_slot_1_pistol": "3",
+    "weapon_slot_2_pistol": "4",
+    "item_slot_1_throwable": "5",
+    "item_slot_2_healing": "6",
+    "item_slot_3_trap": "7"
+  },
+  "camera_and_view": {
+    "look_aim_camera": "Key.mouse",
+    "recenter_camera_vehicle_swim": "Key.caps_lock"
+  },
+  "menus_and_interface": {
+    "open_backpack_crafting_menu": "Key.tab",
+    "open_map": "m",
+    "pause_menu": "Key.esc",
+    "select_menu": "Key.mouse.left",
+    "back_menu": "Key.esc",
+    "next_tab": "Key.right",
+    "previous_tab": "Key.left"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "movement": {
+    "move_forward": "w",
+    "move_left": "a",
+    "move_backward": "s",
+    "move_right": "d",
+    "sprint": "Key.shift_l",
+    "quick_turn": "x",
+    "evade": "Key.space"
+  },
+  "combat": {
+    "light_attack": "Key.mouse.left",
+    "heavy_attack": "Key.mouse.right",
+    "aim_axe": "Key.ctrl_l",
+    "throw_axe": "Key.mouse.left (while aiming)",
+    "recall_axe": "Key.f",
+    "block_parry": "q",
+    "bare_hands": "3",
+    "weapon_ability_1_axe": "Key.mouse.middle (or remappable)",
+    "weapon_ability_2_axe": "v (or remappable)",
+    "spartan_rage": "q + Key.mouse.middle (default)",
+    "stun_grab": "Key.mouse.middle (when prompted)",
+    "lock_on_camera": "Key.mouse.middle"
+  },
+  "atreus_commands": {
+    "atreus_action": "f",
+    "change_arrow_type": "t"
+  },
+  "exploration_and_interaction": {
+    "interact": "e",
+    "interact_alternative": "Key.space"
+  },
+  "weapon_selection": {
+    "sheathe_unsheathe_weapon_axe": "1",
+    "equip_blades_of_chaos": "2"
+  },
+  "menu_and_interface": {
+    "open_weapons_menu": "i",
+    "open_map": "m",
+    "open_skills_menu": "k",
+    "open_goals_menu": "j",
+    "pause_menu": "Key.esc",
+    "photo_mode": "p"
+  },
+  "camera_and_view": {
+    "look_aim_camera": "Key.mouse"
+  }
+}

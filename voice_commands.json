@@ -1,0 +1,126 @@
+{
+  "block": {
+    "name": "block action",
+    "key": "Q",
+    "intents": [
+      "block"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "axe": {
+    "name": "axe action",
+    "key": "R",
+    "intents": [
+      "axe"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "boy": {
+    "name": "boy action",
+    "key": "F",
+    "intents": [
+      "boy"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "rage": {
+    "name": "rage action",
+    "key": "Q + Middle Mouse Button",
+    "intents": [
+      "rage"
+    ],
+    "is_combo": true,
+    "priority": "high"
+  },
+  "dodge": {
+    "name": "dodge action",
+    "key": "Space",
+    "intents": [
+      "dodge"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "grab": {
+    "name": "grab action",
+    "key": "Middle Mouse Button",
+    "intents": [
+      "grab"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "heavy": {
+    "name": "heavy action",
+    "key": "Right Click",
+    "intents": [
+      "heavy"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "aim": {
+    "name": "aim action",
+    "key": "Left CTRL",
+    "intents": [
+      "aim"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "throw": {
+    "name": "throw action",
+    "key": "Left Mouse Button",
+    "intents": [
+      "throw"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "run": {
+    "name": "run action",
+    "key": "Shift",
+    "intents": [
+      "run"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "look": {
+    "name": "look action",
+    "key": "Middle Mouse Button",
+    "intents": [
+      "look"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "map": {
+    "name": "map action",
+    "key": "M",
+    "intents": [
+      "map"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "weapons": {
+    "name": "weapons action",
+    "key": "I",
+    "intents": [
+      "weapons"
+    ],
+    "is_combo": false,
+    "priority": "normal"
+  },
+  "open": {
+    "key": "e",
+    "name": "Open",
+    "intents": [
+      "open"
+    ]
+  }
+}

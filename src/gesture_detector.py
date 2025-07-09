@@ -14,20 +14,27 @@ except ImportError:
 
 class GestureDetector:
     def __init__(self, google_ai_key=None):
-        # Initialize MediaPipe for single hand detection (original working config)
+        # Initialize MediaPipe for dual hand detection - ULTRA-OPTIMIZED for left hand speed
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,
-            max_num_hands=1,  # Single hand only - original working configuration
-            min_detection_confidence=0.8,
-            min_tracking_confidence=0.5
+            max_num_hands=2,  # Both hands for gaming: left=camera, right=gestures
+            min_detection_confidence=0.7,  # Lowered for faster detection
+            min_tracking_confidence=0.3    # Much lower for ultra-responsive tracking
         )
+        
+        # Hand role assignment - dual hand gaming mode
+        self.left_hand_camera = True   # Left hand controls camera
+        self.right_hand_gestures = True  # Right hand for discrete actions
+        self.dual_hand_mode = True     # Enable two-hand gaming system
         self.mp_draw = mp.solutions.drawing_utils
         
-        # Video capture
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        # Video capture - now using threaded approach for better performance
+        self.use_threaded_camera = True
+        self.threaded_camera = None
+        
+        # Fallback to direct capture if needed
+        self.cap = None
         
         # Gesture state tracking
         self.current_gesture = None
@@ -38,14 +45,25 @@ class GestureDetector:
         self.hand_camera_enabled = True  # ON by default
         self.hand_reference_position = None
         self.last_hand_position = None
-        self.camera_sensitivity_x = 5.0  # Increased for larger movement range
-        self.camera_sensitivity_y = 4.0  # Increased for larger movement range
+        self.camera_sensitivity_x = 1.5  # Reduced for God of War precision
+        self.camera_sensitivity_y = 1.2  # Reduced for God of War precision
         self.camera_deadzone = 0.01     # Movement threshold
         
-        # Simple smoothing for fluid camera movement
+        # Aggressive smoothing for ultra-responsive camera movement
         self.smoothed_velocity_x = 0.0
         self.smoothed_velocity_y = 0.0
-        self.smoothing_factor = 0.4  # Higher = more responsive (was too low before)
+        self.smoothing_factor = 0.85  # Increased for immediate response
+        
+        # Left hand performance optimization
+        self.left_hand_frame_skip = 0  # Skip frames for better performance
+        self.left_hand_skip_rate = 1   # Process every frame (no skipping by default)
+        self.cached_left_hand_position = None
+        self.position_interpolation_factor = 0.9  # Very aggressive interpolation
+        
+        # Performance monitoring
+        self.left_hand_response_times = []
+        self.last_left_hand_time = 0
+        self.performance_debug = False
         
         # Parent controller reference
         self.parent_controller = None
@@ -66,28 +84,91 @@ class GestureDetector:
         self.mlp_trainer = None
         self.use_mlp_model = False
         
+        # Gesture-based camera control
+        self.gesture_camera_control = True   # Require "cam" gesture for camera movement
+        self.camera_control_gesture = "cam"  # Name of gesture that enables camera movement  
+        self.camera_control_hand = "left"    # Which hand controls camera
+        self.current_camera_gesture_active = False  # Is camera gesture currently detected
+        
         # Initialize MLP trainer
         try:
             from mlp_gesture_trainer import MLPGestureTrainer
             self.mlp_trainer = MLPGestureTrainer()
             if self.mlp_trainer.load_model():
                 self.use_mlp_model = True
-                print("🎯 MLP gesture system initialized")
+                print("MLP gesture system initialized")
             else:
-                print("📦 MLP gesture system ready for calibration")
+                self.use_mlp_model = False
+                print("MLP gesture system ready for calibration")
         except Exception as e:
-            print(f"⚠️ MLP gesture system not available: {e}")
+            print(f"Warning: MLP gesture system not available: {e}")
             self.mlp_trainer = None
+        
+        # Initialize threaded camera for better performance
+        if self.use_threaded_camera:
+            try:
+                from threaded_camera import ThreadedCameraProcessor
+                self.threaded_camera = ThreadedCameraProcessor(
+                    camera_index=0,
+                    target_fps=30,  # Will auto-reduce during heavy gaming
+                    buffer_size=2
+                )
+                print("🎥 Threaded camera processor initialized")
+            except Exception as e:
+                print(f"Warning: Threaded camera not available: {e}")
+                self.use_threaded_camera = False
         
         
     def get_hand_landmarks(self, frame):
-        """Extract single hand landmarks from frame (original working method)"""
+        """Extract hand landmarks - returns both hands for dual-hand gaming"""
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.hands.process(rgb_frame)
         
+        # For backwards compatibility, return single hand if only one detected
         if results.multi_hand_landmarks:
-            return results.multi_hand_landmarks[0]
+            if len(results.multi_hand_landmarks) == 1:
+                # Single hand detected - use as right hand (gesture hand)
+                return results.multi_hand_landmarks[0]
+            else:
+                # Multiple hands detected - return the right hand for gestures
+                # MediaPipe provides handedness information
+                if results.multi_handedness:
+                    for i, handedness in enumerate(results.multi_handedness):
+                        # MediaPipe gives "Left"/"Right" from camera perspective
+                        # "Right" in camera view = user's right hand
+                        if handedness.classification[0].label == "Right":
+                            return results.multi_hand_landmarks[i]
+                # Fallback to first hand if no right hand found
+                return results.multi_hand_landmarks[0]
         return None
+        
+    def get_both_hands(self, frame):
+        """Get both hands separately for dual-hand gaming"""
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = self.hands.process(rgb_frame)
+        
+        left_hand = None
+        right_hand = None
+        
+        if results.multi_hand_landmarks and results.multi_handedness:
+            # Debug: Show detected hands info
+            detected_hands = []
+            for i, handedness in enumerate(results.multi_handedness):
+                hand_label = handedness.classification[0].label
+                confidence = handedness.classification[0].score
+                detected_hands.append(f"{hand_label}({confidence:.2f})")
+                
+                if hand_label == "Left":  # Camera perspective: user's left hand
+                    left_hand = results.multi_hand_landmarks[i]
+                elif hand_label == "Right":  # Camera perspective: user's right hand
+                    right_hand = results.multi_hand_landmarks[i]
+            
+            # Store debug info for display
+            self.detected_hands_debug = ", ".join(detected_hands)
+        else:
+            self.detected_hands_debug = "No hands detected"
+        
+        return left_hand, right_hand, results
     
     
     def extract_features(self, landmarks) -> Dict[str, float]:
@@ -224,8 +305,29 @@ class GestureDetector:
             
         return "none", 0.0
     
+    def classify_gesture_for_hand(self, landmarks, hand_type: str) -> Tuple[str, float]:
+        """Classify gesture for specific hand with trained models"""
+        if not landmarks:
+            return "none", 0.0
+        
+        # First try MLP trainer for hand-specific gestures
+        if self.mlp_trainer and self.use_mlp_model:
+            try:
+                # Check if MLP trainer supports hand-specific classification
+                if hasattr(self.mlp_trainer, 'classify_gesture_for_hand'):
+                    return self.mlp_trainer.classify_gesture_for_hand(landmarks, hand_type)
+                else:
+                    # Fallback to regular MLP classification using landmarks
+                    return self.mlp_trainer.predict_gesture(landmarks)
+            except Exception as e:
+                print(f"MLP classification error: {e}")
+        
+        # Fallback to MediaPipe classification (extract features first)
+        features = self.extract_features(landmarks)
+        return self.classify_gesture(features)
+    
     def calculate_hand_camera_movement(self, landmarks, image_size):
-        """Calculate camera movement based on hand velocity with smooth interpolation"""
+        """Optimized camera movement with aggressive responsiveness for left hand"""
         if not landmarks or not self.hand_camera_enabled:
             return 0, 0
             
@@ -236,35 +338,42 @@ class GestureDetector:
         # Initialize positions if not set
         if self.last_hand_position is None:
             self.last_hand_position = current_position
+            self.cached_left_hand_position = current_position
             return 0, 0
         
-        # Calculate raw velocity (movement since last frame)
+        # PERFORMANCE OPTIMIZATION: Use cached position when available
+        if self.cached_left_hand_position is not None:
+            # Interpolate between cached and current for ultra-smooth movement
+            interpolated_x = (1 - self.position_interpolation_factor) * self.cached_left_hand_position[0] + self.position_interpolation_factor * current_position[0]
+            interpolated_y = (1 - self.position_interpolation_factor) * self.cached_left_hand_position[1] + self.position_interpolation_factor * current_position[1]
+            current_position = (interpolated_x, interpolated_y)
+        
+        # Calculate raw velocity with high precision
         raw_velocity_x = current_position[0] - self.last_hand_position[0]
         raw_velocity_y = current_position[1] - self.last_hand_position[1]
         
-        # Using simple exponential smoothing for stability
-        
-        # Apply exponential smoothing for fluid movement
-        # Formula: smoothed = (1-α) * old_smoothed + α * raw_value
+        # Ultra-aggressive smoothing for immediate response
         self.smoothed_velocity_x = (1 - self.smoothing_factor) * self.smoothed_velocity_x + self.smoothing_factor * raw_velocity_x
         self.smoothed_velocity_y = (1 - self.smoothing_factor) * self.smoothed_velocity_y + self.smoothing_factor * raw_velocity_y
         
-        # Update last position for next frame
+        # Update positions for next frame
         self.last_hand_position = current_position
+        self.cached_left_hand_position = current_position
         
-        # Simple, responsive movement - back to basics but better
+        # Ultra-responsive movement calculation
         mouse_dx = 0.0
         mouse_dy = 0.0
         
-        # Only move if above deadzone
-        if abs(self.smoothed_velocity_x) > self.camera_deadzone:
-            # Simple linear scaling with floating point precision
-            mouse_dx = self.smoothed_velocity_x * self.camera_sensitivity_x * 800
-            
-        if abs(self.smoothed_velocity_y) > self.camera_deadzone:
-            mouse_dy = self.smoothed_velocity_y * self.camera_sensitivity_y * 800
+        # Lower deadzone for more sensitive movement detection
+        ultra_deadzone = self.camera_deadzone * 0.5  # Half the deadzone for faster response
         
-        # Apply floating point precision for micro-movements
+        if abs(self.smoothed_velocity_x) > ultra_deadzone:
+            # Increased sensitivity multiplier for faster response
+            mouse_dx = self.smoothed_velocity_x * self.camera_sensitivity_x * 1000  # Increased from 800
+            
+        if abs(self.smoothed_velocity_y) > ultra_deadzone:
+            mouse_dy = self.smoothed_velocity_y * self.camera_sensitivity_y * 1000  # Increased from 800
+        
         return mouse_dx, mouse_dy
     
     def set_hand_camera_reference(self):
@@ -272,7 +381,26 @@ class GestureDetector:
         self.last_hand_position = None
         self.smoothed_velocity_x = 0.0
         self.smoothed_velocity_y = 0.0
+        self.cached_left_hand_position = None
         print("📍 Hand camera tracking reset")
+    
+    def get_left_hand_performance_stats(self):
+        """Get performance statistics for left hand tracking"""
+        if not self.left_hand_response_times:
+            return "No data yet"
+        
+        avg_response = sum(self.left_hand_response_times) / len(self.left_hand_response_times)
+        min_response = min(self.left_hand_response_times)
+        max_response = max(self.left_hand_response_times)
+        
+        return f"Left Hand FPS: {1/avg_response:.1f} | Avg: {avg_response*1000:.1f}ms | Min: {min_response*1000:.1f}ms | Max: {max_response*1000:.1f}ms"
+    
+    def toggle_performance_debug(self):
+        """Toggle performance debugging display"""
+        self.performance_debug = not self.performance_debug
+        status = "ON" if self.performance_debug else "OFF"
+        print(f"📊 Left hand performance debug: {status}")
+        return self.performance_debug
     
     def toggle_hand_camera(self):
         """Toggle hand camera control on/off"""
@@ -325,19 +453,68 @@ class GestureDetector:
         print("❌ MLP calibration failed")
         return False
     
-    def add_custom_gesture(self, gesture_name: str, key_mapping: str):
-        """Add a custom gesture after initial calibration"""
+    def add_custom_gesture(self, gesture_name: str, key_mapping: str, hand_type: str = "right"):
+        """Add a custom gesture after initial calibration with hand type support"""
         if not self.mlp_trainer:
             print("❌ MLP trainer not available")
             return False
         
-        success = self.mlp_trainer.add_custom_gesture(gesture_name, key_mapping)
+        # Temporarily stop threaded camera to avoid conflicts
+        camera_was_threaded = False
+        if self.use_threaded_camera and self.threaded_camera and self.threaded_camera.running:
+            print("⏸️ Temporarily stopping threaded camera for gesture capture")
+            self.threaded_camera.stop()
+            camera_was_threaded = True
+        
+        # Provide camera access to MLP trainer
+        if self.cap and self.cap.isOpened():
+            self.mlp_trainer.external_camera = self.cap
+        
+        # Add hand type information to the gesture
+        success = self.mlp_trainer.add_custom_gesture(gesture_name, key_mapping, hand_type=hand_type)
+        
+        # If this is a camera control gesture, initialize gesture-based camera control
+        if success and key_mapping == "camera_control":
+            self.gesture_camera_control = True
+            self.camera_control_gesture = gesture_name
+            self.camera_control_hand = hand_type
+            print(f"✅ Gesture-based camera control enabled for {hand_type} hand gesture: {gesture_name}")
+            print("💡 Camera will only move when this gesture is detected")
+        
+        # Remove camera reference
+        if hasattr(self.mlp_trainer, 'external_camera'):
+            self.mlp_trainer.external_camera = None
+        
+        # Restart threaded camera if it was running
+        if camera_was_threaded:
+            print("▶️ Restarting threaded camera")
+            self.threaded_camera.start()
+        
         if success:
             self.use_mlp_model = True
             print(f"✅ Custom gesture '{gesture_name}' added!")
         return success
-
     
+    def toggle_gesture_camera_control(self):
+        """Toggle gesture-based camera control on/off"""
+        if not self.camera_control_gesture:
+            print("❌ No camera control gesture trained yet")
+            print("💡 Use 'j' to add a left hand camera control gesture")
+            return False
+        
+        self.gesture_camera_control = not self.gesture_camera_control
+        
+        if self.gesture_camera_control:
+            print(f"✅ Gesture camera control ENABLED")
+            print(f"🎥 Camera will only move when '{self.camera_control_gesture}' gesture is detected")
+            print(f"✋ Use your {self.camera_control_hand} hand")
+        else:
+            print(f"❌ Gesture camera control DISABLED")
+            print("🔄 Reverted to always-on left hand camera movement")
+            print("💡 Left hand will now always control camera movement")
+        
+        return self.gesture_camera_control
+
     def start_override_training(self, movement_key: str):
         """Start training mode for existing movement keys with AI override"""
         if not self.custom_ai:
@@ -490,6 +667,33 @@ class GestureDetector:
         
         self.custom_ai.list_trained_gestures()
     
+    def start_camera(self):
+        """Start the camera system"""
+        if self.use_threaded_camera and self.threaded_camera:
+            success = self.threaded_camera.start()
+            if success:
+                print("✅ High-performance threaded camera started")
+                return True
+            else:
+                print("⚠️ Threaded camera failed, falling back to direct capture")
+                self.use_threaded_camera = False
+        
+        # Fallback: initialize direct capture
+        if not self.cap:
+            self.cap = cv2.VideoCapture(0)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        
+        return self.cap.isOpened() if self.cap else False
+    
+    def get_camera_stats(self):
+        """Get camera performance statistics"""
+        if self.use_threaded_camera and self.threaded_camera:
+            return self.threaded_camera.get_stats()
+        else:
+            return {"mode": "direct_capture", "fps": "unknown"}
+    
     def get_cached_ai_result(self, frame):
         """Get AI result with smart caching and fallback logic"""
         if not self.custom_ai_enabled or not self.custom_ai:
@@ -533,15 +737,35 @@ class GestureDetector:
         return self.ai_fallback_only
     
     def process_frame(self) -> Tuple[Optional[np.ndarray], str, float, int, int]:
-        """Process single frame and return frame, gesture, confidence, hand_mouse_dx, hand_mouse_dy"""
-        ret, frame = self.cap.read()
-        if not ret:
-            return None, "none", 0.0, 0, 0
-            
-        # Flip frame horizontally for mirror effect
-        frame = cv2.flip(frame, 1)
+        """Process frame with dual-hand gaming: left=camera, right=gestures"""
         
-        # Initialize all variables to prevent scope issues
+        # Use threaded camera if available
+        if self.use_threaded_camera and self.threaded_camera:
+            ret, frame = self.threaded_camera.get_frame()
+            if not ret:
+                return None, "none", 0.0, 0, 0
+        else:
+            # Fallback to direct capture
+            if not self.cap:
+                self.cap = cv2.VideoCapture(0)
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            
+            ret, frame = self.cap.read()
+            if not ret:
+                return None, "none", 0.0, 0, 0
+            
+            # Flip frame for mirror effect (threaded camera already does this)
+            frame = cv2.flip(frame, 1)
+        
+        # Frame counting for debugging purposes
+        if hasattr(self, '_debug_frame_count'):
+            self._debug_frame_count += 1
+        else:
+            self._debug_frame_count = 1
+        
+        # Initialize all variables
         final_gesture = "none"
         final_confidence = 0.0
         display_gesture = "none"
@@ -550,16 +774,110 @@ class GestureDetector:
         features = {}
         ai_used = False
         
-        # Get hand landmarks
-        landmarks = self.get_hand_landmarks(frame)
+        # TWO-HAND GAMING SYSTEM
+        if self.dual_hand_mode and self.left_hand_camera and self.right_hand_gestures:
+            # Get both hands separately
+            left_hand, right_hand, results = self.get_both_hands(frame)
+            
+            # Debug: Show dual hand mode status and hand detection
+            hand_info = f"DUAL MODE: L={left_hand is not None}, R={right_hand is not None}"
+            cv2.putText(frame, hand_info, (10, 350), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+            
+            # Show detected hands info
+            if hasattr(self, 'detected_hands_debug'):
+                cv2.putText(frame, f"Detected: {self.detected_hands_debug}", (10, 370), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1)
+            
+            # Draw both hands if detected
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    self.mp_draw.draw_landmarks(frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
+            
+            # LEFT HAND: ULTRA-OPTIMIZED camera movement for immediate response
+            if left_hand and self.hand_camera_enabled:
+                # Debug: Show that left hand is detected
+                cv2.putText(frame, "LEFT HAND: DETECTED", (10, 320), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
+                # Performance tracking
+                import time
+                current_time = time.time()
+                if self.last_left_hand_time > 0:
+                    response_time = current_time - self.last_left_hand_time
+                    self.left_hand_response_times.append(response_time)
+                    # Keep only last 30 measurements
+                    if len(self.left_hand_response_times) > 30:
+                        self.left_hand_response_times.pop(0)
+                self.last_left_hand_time = current_time
+                
+                # AGGRESSIVE OPTIMIZATION: Minimize all processing overhead
+                self.left_hand_frame_skip += 1
+                
+                if self.gesture_camera_control and self.camera_control_gesture:
+                    # Reduce gesture checking to every 5 frames for maximum performance
+                    if not hasattr(self, 'gesture_check_counter'):
+                        self.gesture_check_counter = 0
+                    
+                    self.gesture_check_counter += 1
+                    
+                    # Only check gesture every 5 frames to eliminate lag
+                    if self.gesture_check_counter % 5 == 0:
+                        left_gesture, left_confidence = self.classify_gesture_for_hand(left_hand, "left")
+                        self.last_camera_gesture = left_gesture
+                        self.last_camera_confidence = left_confidence
+                    
+                    # INVERTED LOGIC: Camera moves by default, stops when cam gesture detected
+                    if hasattr(self, 'last_camera_gesture') and self.last_camera_gesture == self.camera_control_gesture and getattr(self, 'last_camera_confidence', 0) > 0.6:
+                        # Camera control gesture detected - STOP movement
+                        self.current_camera_gesture_active = False
+                        hand_mouse_dx, hand_mouse_dy = 0, 0
+                        
+                        # Visual feedback showing camera is paused
+                        cv2.putText(frame, f"CAM: PAUSED ({self.camera_control_gesture})", (10, 300), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                    else:
+                        # No camera gesture - enable normal movement (default behavior)
+                        self.current_camera_gesture_active = True
+                        hand_mouse_dx, hand_mouse_dy = self.calculate_hand_camera_movement(left_hand, frame.shape)
+                else:
+                    # Always-on camera mode - MAXIMUM PERFORMANCE path
+                    hand_mouse_dx, hand_mouse_dy = self.calculate_hand_camera_movement(left_hand, frame.shape)
+                    
+                    # Show left hand camera status
+                    cv2.putText(frame, "LEFT HAND CAMERA: ACTIVE", (10, 300), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            else:
+                # Show when left hand is not detected
+                if self.hand_camera_enabled:
+                    if not hasattr(self, 'detected_hands_debug') or "Left" not in self.detected_hands_debug:
+                        cv2.putText(frame, "LEFT HAND: NOT DETECTED", (10, 320), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                        cv2.putText(frame, "LEFT HAND CAMERA: WAITING", (10, 300), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            
+            # RIGHT HAND: Gesture recognition only (existing trained model)
+            if right_hand:
+                landmarks = right_hand  # Use right hand for all gesture recognition
+            else:
+                landmarks = None
+                
+        else:
+            # FALLBACK: Single hand mode (original system)
+            # Debug: Show why we're in single hand mode
+            cv2.putText(frame, f"SINGLE HAND MODE: dual={self.dual_hand_mode}, left={self.left_hand_camera}, right={self.right_hand_gestures}", 
+                       (10, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+            landmarks = self.get_hand_landmarks(frame)
+            
+            if landmarks:
+                # Draw hand landmarks
+                self.mp_draw.draw_landmarks(frame, landmarks, self.mp_hands.HAND_CONNECTIONS)
+                
+                # Calculate hand camera movement (if enabled)
+                if self.hand_camera_enabled:
+                    hand_mouse_dx, hand_mouse_dy = self.calculate_hand_camera_movement(landmarks, frame.shape)
         
+        # GESTURE RECOGNITION (for right hand in dual mode, or single hand in single mode)
         if landmarks:
-            # Draw hand landmarks
-            self.mp_draw.draw_landmarks(frame, landmarks, self.mp_hands.HAND_CONNECTIONS)
-            
-            # Calculate hand camera movement
-            hand_mouse_dx, hand_mouse_dy = self.calculate_hand_camera_movement(landmarks, frame.shape)
-            
             # Smart gesture recognition with AI fallback
             # Variables already initialized above
             
@@ -658,10 +976,12 @@ class GestureDetector:
                 cv2.putText(frame, "Press SPACE to capture example", 
                            (10, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
             
-            # Add hand camera status
+            # Add hand camera status with performance metrics
             if self.hand_camera_enabled:
-                cv2.putText(frame, f"Hand Camera: ({hand_mouse_dx:.1f}, {hand_mouse_dy:.1f}) | Smoothing: {self.smoothing_factor:.1f}", 
-                           (10, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
+                camera_text = f"Hand Camera: ({hand_mouse_dx:.1f}, {hand_mouse_dy:.1f}) | Smoothing: {self.smoothing_factor:.1f}"
+                if self.performance_debug and self.left_hand_response_times:
+                    camera_text += f" | {self.get_left_hand_performance_stats()}"
+                cv2.putText(frame, camera_text, (10, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1)
             
             # Add custom AI status
             if self.custom_ai:
@@ -686,7 +1006,37 @@ class GestureDetector:
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             return frame, "none", 0.0, 0, 0
     
+    def toggle_dual_hand_mode(self):
+        """Toggle between single hand and dual hand gaming mode"""
+        self.dual_hand_mode = not self.dual_hand_mode
+        mode = "DUAL HAND" if self.dual_hand_mode else "SINGLE HAND"
+        print(f"🙌 Hand Mode: {mode}")
+        
+        if self.dual_hand_mode:
+            print("💡 Left hand = Camera, Right hand = Gestures")
+            print("💡 Your existing trained gestures work on RIGHT hand")
+        else:
+            print("💡 Single hand for both camera and gestures")
+            print("💡 Original system restored")
+        
+        return self.dual_hand_mode
+        
+    def get_hand_mode_status(self):
+        """Get current hand mode status for display"""
+        if self.dual_hand_mode:
+            return "Dual Hand (L=Cam, R=Gest)"
+        else:
+            return "Single Hand"
+            
     def release(self):
         """Clean up resources"""
-        self.cap.release()
+        # Stop threaded camera
+        if self.use_threaded_camera and self.threaded_camera:
+            self.threaded_camera.stop()
+        
+        # Release direct capture if used
+        if self.cap:
+            self.cap.release()
+        
         cv2.destroyAllWindows()
+        print("🛑 Camera resources released")

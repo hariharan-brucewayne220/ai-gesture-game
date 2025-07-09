@@ -22,13 +22,14 @@ class MLPGestureTrainer:
         self.scaler = StandardScaler()
         self.is_calibrated = False
         
-        # Model paths
-        self.model_dir = "mlp_models"
-        self.model_path = os.path.join(self.model_dir, "gesture_model.pkl").replace("\\", "/")
-        self.scaler_path = os.path.join(self.model_dir, "scaler.pkl").replace("\\", "/")
-        self.classes_path = os.path.join(self.model_dir, "classes.pkl").replace("\\", "/")
-        self.training_data_path = os.path.join(self.model_dir, "training_data.pkl").replace("\\", "/")
-        self.model_dir = self.model_dir.replace("\\", "/")
+        # Model paths - use absolute path from project root
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)  # Go up from src/ to project root
+        self.model_dir = os.path.join(project_root, "mlp_models")
+        self.model_path = os.path.join(self.model_dir, "gesture_model.pkl")
+        self.scaler_path = os.path.join(self.model_dir, "scaler.pkl")
+        self.classes_path = os.path.join(self.model_dir, "classes.pkl")
+        self.training_data_path = os.path.join(self.model_dir, "training_data.pkl")
         
         # Create model directory
         os.makedirs(self.model_dir, exist_ok=True)
@@ -134,9 +135,13 @@ class MLPGestureTrainer:
     
     def calibrate_gesture(self, gesture_name: str, key_mapping: str):
         """Calibrate a specific gesture with multiple sessions"""
-        # Add to gesture classes
-        class_index = len(self.gesture_classes)
-        self.gesture_classes[gesture_name] = class_index
+        # Get existing class index (gesture should already be in gesture_classes)
+        if gesture_name not in self.gesture_classes:
+            # Add to gesture classes if not exists (for backwards compatibility)
+            class_index = len(self.gesture_classes)
+            self.gesture_classes[gesture_name] = class_index
+        else:
+            class_index = self.gesture_classes[gesture_name]
         
         total_sessions = self.pics_per_gesture // self.pics_per_session
         
@@ -169,8 +174,17 @@ class MLPGestureTrainer:
             min_tracking_confidence=0.5
         )
         
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to prevent lag
+        # Try to use external camera reference if available
+        cap = None
+        if hasattr(self, 'external_camera') and self.external_camera:
+            print("Using existing camera instance")
+            cap = self.external_camera
+            should_release = False  # Don't release external camera
+        else:
+            print("Creating new camera instance for gesture capture")
+            cap = cv2.VideoCapture(0)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to prevent lag
+            should_release = True  # Release our own camera
         
         # Session timing
         start_time = time.time()
@@ -253,10 +267,15 @@ class MLPGestureTrainer:
                     break
         
         finally:
-            try:
-                cap.release()
-            except:
-                pass
+            # Only release camera if we created it ourselves
+            if should_release:
+                try:
+                    cap.release()
+                    print("Released camera instance")
+                except:
+                    pass
+            else:
+                print("Left camera instance for main application")
             try:
                 cv2.destroyAllWindows()
                 cv2.waitKey(1)  # Force window cleanup
@@ -337,12 +356,16 @@ class MLPGestureTrainer:
     
     def predict_gesture(self, landmarks) -> Tuple[str, float]:
         """Predict gesture from landmarks"""
-        if not self.model or not landmarks:
+        if not self.model:
+            return "none", 0.0
+        
+        if not landmarks:
             return "none", 0.0
         
         try:
             # Extract features
             features = self.extract_landmark_features(landmarks)
+            
             if len(features) == 0:
                 return "none", 0.0
             
@@ -364,12 +387,55 @@ class MLPGestureTrainer:
             return gesture_name or "none", confidence
             
         except Exception as e:
-            print(f"Prediction error: {e}")
+            print(f"Error in gesture prediction: {e}")
             return "none", 0.0
     
-    def add_custom_gesture(self, gesture_name: str, key_mapping: str):
+    def classify_gesture_for_hand(self, landmarks, hand_type: str) -> Tuple[str, float]:
+        """Classify gesture with hand type awareness using landmarks"""
+        if not self.model:
+            return "none", 0.0
+        
+        if not landmarks:
+            return "none", 0.0
+        
+        try:
+            # Extract features from landmarks (like predict_gesture does)
+            features = self.extract_landmark_features(landmarks)
+            
+            if len(features) == 0:
+                return "none", 0.0
+            
+            # Scale features
+            features_scaled = self.scaler.transform(features.reshape(1, -1))
+            
+            # Predict
+            prediction = self.model.predict(features_scaled)[0]
+            probabilities = self.model.predict_proba(features_scaled)[0]
+            confidence = np.max(probabilities)
+            
+            # Get gesture name and check if it matches the expected hand type
+            gesture_name = None
+            for name, class_idx in self.gesture_classes.items():
+                if class_idx == prediction:
+                    gesture_name = name
+                    break
+            
+            if gesture_name:
+                # Check if gesture is for the correct hand type
+                gesture_hand_type = self.get_gesture_hand_type(gesture_name)
+                if gesture_hand_type != hand_type:
+                    # Lower confidence for wrong hand type
+                    confidence *= 0.3
+            
+            return gesture_name or "none", confidence
+            
+        except Exception as e:
+            print(f"Error in hand-aware gesture classification: {e}")
+            return "none", 0.0
+    
+    def add_custom_gesture(self, gesture_name: str, key_mapping: str, hand_type: str = "right"):
         """Add a custom gesture after initial calibration"""
-        print(f"\nAdding custom gesture: {gesture_name} → {key_mapping}")
+        print(f"\nAdding custom gesture: {gesture_name} → {key_mapping} (hand: {hand_type})")
         
         # First, ensure existing model is loaded
         if not self.model or not self.training_data:
@@ -409,8 +475,11 @@ class MLPGestureTrainer:
             self.training_data = updated_training_data
             print(f"Updated {len(self.training_data)} training samples with new labels")
         
-        # Add to default gestures for key mapping
-        self.default_gestures[gesture_name] = key_mapping
+        # Add to default gestures for key mapping with hand type
+        self.default_gestures[gesture_name] = {
+            "key": key_mapping,
+            "hand_type": hand_type
+        } if hand_type != "right" else key_mapping  # Keep backward compatibility
         
         # Store current training data count
         original_samples = len(self.training_data)
@@ -520,7 +589,17 @@ class MLPGestureTrainer:
     
     def get_gesture_key_mapping(self, gesture_name: str) -> Optional[str]:
         """Get key mapping for a gesture"""
-        return self.default_gestures.get(gesture_name)
+        mapping = self.default_gestures.get(gesture_name)
+        if isinstance(mapping, dict):
+            return mapping.get("key")
+        return mapping
+    
+    def get_gesture_hand_type(self, gesture_name: str) -> str:
+        """Get hand type for a gesture"""
+        mapping = self.default_gestures.get(gesture_name)
+        if isinstance(mapping, dict):
+            return mapping.get("hand_type", "right")
+        return "right"  # Default for backward compatibility
     
     def clear_all_data(self):
         """Clear all training data and models for fresh start"""
