@@ -37,6 +37,9 @@ rag_env/
 mediapipe/
 mp_env/
 
+# PDF files
+*.pdf
+
 # Backup Files
 backups/
 mlp_models/
