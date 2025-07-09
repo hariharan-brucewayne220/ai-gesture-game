@@ -33,7 +33,9 @@ ENV/
 # Large Model Files
 vosk_models/
 whisper.cpp/
+rag_env/
 mediapipe/
+mp_env/
 
 # Backup Files
 backups/
